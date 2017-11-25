@@ -12,6 +12,13 @@ public class ShootingGunController : MonoBehaviour
     public LineRenderer gunFlare;
     public float gunFlareVisibleSeconds = 0.07f;
     public Transform gunEnd;
+    public Transform cameraTransform;
+    public Reticle reticle; //準心
+    public Transform gunContainer;//槍本身的Transform
+    public float damping = 0.5f;//手追攝影機的參數
+    public float dampingCoef = -20f;
+    public float gunContainerSmooth = 10f;
+    //------------------------------//
     private void OnEnable()
     {
         vrInput.OnDown += HandleDown;//事件的用法+=
@@ -29,9 +36,9 @@ public class ShootingGunController : MonoBehaviour
     private IEnumerator Fire()
     {
         audioSource.Play();
-        float lineLength = defaultLineLength;//雷射長度為與物體的距離
+        float lineLength = defaultLineLength;//雷射長度
         //todo 判斷有無設到東西
-        flareParticle.Play();
+        flareParticle.Play();//粒子
         gunFlare.enabled = true;
         yield return StartCoroutine(MoveLineRenderer(lineLength));//等條件完成才繼續往下走
         gunFlare.enabled = false;
@@ -47,5 +54,12 @@ public class ShootingGunController : MonoBehaviour
             yield return null;//跳出
             timer += Time.deltaTime;
         }
+    }
+    private void Update()
+    {
+        transform.rotation = Quaternion.Slerp(transform.rotation, InputTracking.GetLocalRotation(VRNode.Head), damping * (1 - Mathf.Exp(dampingCoef * Time.deltaTime)));//InputTracking:API;旋轉
+        transform.position = cameraTransform.position;
+        Quaternion lookAtRotation = Quaternion.LookRotation(reticle.ReticleTransform.position - gunContainer.position);//手隨看的方向旋轉
+        gunContainer.rotation = Quaternion.Slerp(gunContainer.rotation,lookAtRotation,gunContainerSmooth*Time.deltaTime);
     }
 }
