@@ -65,7 +65,9 @@ public class ShootingGalleryController : MonoBehaviour//Class類別
                 if (Random.value < spawnProbablility)
                 {
                     spawnTimer = spawnInterval;//reset下一次的時間
-                    Spawn();
+                    /*---------------------*/
+                    Spawn(gameTimer);
+                    /*--------------------*/
                 }
             }
             yield return null;//停 一 ㄓㄣ-
@@ -85,10 +87,19 @@ public class ShootingGalleryController : MonoBehaviour//Class類別
         yield return StartCoroutine(uiController.HideOutroUI());
     }
 
-    private void Spawn()
+    private void Spawn(float timeRemaining)
     {
         GameObject target = targetObjectPool.GetGameObjectFromPool();
         target.transform.position = SpawnPosition();
+        ShootingTarget shootingTarget = target.GetComponent<ShootingTarget>();
+        shootingTarget.Restart(timeRemaining);
+        shootingTarget.onRemove += HandleTargetRemoved ;
+
+    }
+    private void HandleTargetRemoved(ShootingTarget target) {
+        target.onRemove -= HandleTargetRemoved;
+        targetObjectPool.ReturnGameObjectToPool(target.gameObject);
+
     }
     private Vector3 SpawnPosition() //不會回傳值打void;回傳三維向量要打Vector3
     {

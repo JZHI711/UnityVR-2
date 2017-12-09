@@ -18,6 +18,8 @@ public class ShootingGunController : MonoBehaviour
     public float damping = 0.5f;//手追攝影機的參數
     public float dampingCoef = -20f;
     public float gunContainerSmooth = 10f;
+    public ShootingGalleryController shootingGalleryController;
+    public VREyeRaycaster eyeRaycaster;
     //------------------------------//
     private void OnEnable()
     {
@@ -30,14 +32,31 @@ public class ShootingGunController : MonoBehaviour
     }
     private void HandleDown()//方法
     {
-        StartCoroutine(Fire());//設定條件等待,條件成立繼續執行
+        if (shootingGalleryController.IsPlaying == false)
+            return;
+        //------------------------------
+        ShootingTarget shootingTarget =eyeRaycaster.CurrentInteractible ? eyeRaycaster.CurrentInteractible.GetComponent<ShootingTarget>():null;
+        /*
+        等同於
+        if(eyeRaycaster.CurrentInteractible){
+        eyeRaycaster.CurrentInteractible.GetComponent<ShootingTarget>();
+        else
+        return null;
+        }
+        */
+        Transform target = shootingTarget ? shootingTarget.transform:null;
+        StartCoroutine(Fire(target));//設定條件等待,條件成立繼續執行
+        //------------------------------
     }
 
-    private IEnumerator Fire()
+    private IEnumerator Fire(Transform target)
     {
         audioSource.Play();
         float lineLength = defaultLineLength;//雷射長度
         //todo 判斷有無設到東西
+        if (target != null) {
+            lineLength = Vector3.Distance(gunEnd.position,target.position);
+        }
         flareParticle.Play();//粒子
         gunFlare.enabled = true;
         yield return StartCoroutine(MoveLineRenderer(lineLength));//等條件完成才繼續往下走
